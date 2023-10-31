@@ -3,7 +3,7 @@
 
 Preferences _WiFin;
 
-#define Debug 1
+#define Debug 0
 
 
 ESP8266WebServer _httpServer(80);
@@ -233,39 +233,65 @@ IPAddress WifiManager::getWiFiIP() {
 }
 */
 
+
+
+
 bool WifiManager::autoConnect(char const* apName, char const* apPassword) {
 A:
-    String ssid = _WiFin.getString("WifiPass", "");
-    String pass = _WiFin.getString("WifiPass", "");
-    if (ssid.length() > 0) {
-        
+#if Debug == 1
+    Serial.print("Wifi connecting... ");
+#endif
+    String _ssid = _WiFin.getString("WifiSSID", "");
+    String _pass = _WiFin.getString("WifiPass", "");
+    if (_ssid.length() > 0) {
+        _ssid += "\0";
+        _pass += "\0";
         if (WiFi.status() != WL_CONNECTED) {
-            WiFi.disconnect();
+            //WiFi.disconnect();
             WiFi.mode(WIFI_STA);
-            WiFi.begin(ssid, pass);
+#if Debug == 1
+            Serial.print("Connect to: ");
+            Serial.print(_ssid);
+            Serial.print("; ");
+            Serial.println(_pass);
+
+#endif
+            
+            String ss = "Bee R&D";
+            String ps = "beeau$beeau";
+            WiFi.begin(_ssid, _pass);
+
             while (WiFi.status() != WL_CONNECTED) {
-                delay(50);
+                delay(100);
 #if Debug == 1
                 Serial.print(".");
 #endif
-                toge = !toge;
-                digitalWrite(led_stt, toge);
-                if (millis() - t2 > 15000) {
-                    return false;
+                //toge = !toge;
+                //digitalWrite(led_stt, toge);
+                digitalWrite(led_stt, HIGH );
+                if (millis() - t2 > 55000) {
+                    goto B;
                 }
             }
+#if Debug == 1
+            Serial.println("Connected;");
+#endif
+            digitalWrite(led_stt, LOW);
+            delay(100);
             return true;
         }
 
     }
-
+    B:
     //_WiFi.begin("_wifi", false);
     int n;
     t2 = millis();
     digitalWrite(led_stt, 1);
     WiFi.disconnect();
     WiFi.mode(WIFI_AP);
+#if Debug == 1
     Serial.println(apName);
+#endif
     WiFi.softAP(apName, apPassword);
     
     IPAddress setup_Subnet(255, 255, 255, 0);
@@ -287,7 +313,6 @@ A:
             toge = !toge;
             digitalWrite(led_stt, toge);
         }
-        else t1 = millis();
         if (setup_string.length() > 1) {
             String cmd = setup_string.substring(0, 3);
             String data = "";
@@ -310,7 +335,7 @@ A:
             case 2: {
                 data = setup_string.substring(5);
                 int index_ = setup_string.indexOf(",");
-                String ssid_ = setup_string.substring(0, index_);
+                String ssid_ = setup_string.substring(5, index_);
                 String pass_ = setup_string.substring(index_ + 1);
 #if (Debug == 1)
                 Serial.print(" ssid_: ");
@@ -318,7 +343,7 @@ A:
                 Serial.print(" pass_: ");
                 Serial.println(pass_);
 #endif
-                _WiFin.putString("WifiPass", ssid_);
+                _WiFin.putString("WifiSSID", ssid_);
                 _WiFin.putString("WifiPass", pass_);
                 fis = true;
                 t1 = millis();
@@ -330,7 +355,7 @@ A:
             setup_string = "";
         }
         if (fis) {
-            if (millis() - t1 > 2000) {
+            if (millis() - t1 > 1000) {
                 WiFi.softAPdisconnect();
                 delay(500);
                 ESP.restart();

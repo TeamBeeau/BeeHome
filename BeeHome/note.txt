@@ -1,0 +1,16 @@
+db: Login    ->  id - User - Name - Pass - Time
+db: Home     ->  id - Name - User - date
+db: Device   ->  id - MAC - User - Name - Room - HourLogin - Type - ItemNames
+db: Control  ->  id - MAC - User - Type - State - Delay - Event - LastRequest
+
+
+* ESP
+- New device 
+
+	                                                                                 |---> db: Control no data  ----> create new  |
+        App ---Connect ESP wifi AP---> Set User to ESP, Set SSID-Pass  --ESP connect db--|---> db: Control is data ---> User ==       |---> Event = "New" --> App process
+                                                                                                                    |-> User !=       |
+- Run:
+        ESP ---Connect to db: Control----> Get_Stae (MAC) ---> String("1;0;1;,....;")      ---> Get_Delay (MAC) ----> int(sec) ----> Get_Event ---> String("")
+                                                              |"state1;state2;state3,...."|
+
