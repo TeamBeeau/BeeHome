@@ -214,6 +214,15 @@ String WifiManager::getUser() {
     return _WiFin.getString("User", "");
 }
 
+
+bool WifiManager::New() {
+    return _WiFin.getBool("New", false);
+}
+
+void WifiManager::set_Reset() {
+    _WiFin.putBool("Reset", true);
+}
+
 /*
 IPAddress WifiManager::getWiFiIP() {
     String s = _WiFin.getString("WifiIP", "");

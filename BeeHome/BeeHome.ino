@@ -9,17 +9,12 @@
 const unsigned long looptime_States = 1000;
 const unsigned long looptime_Delays = 10000;
 const unsigned long looptime_Events = 5000;
+const unsigned long looptime_update = 500;
 
 const char* ssid = "Bee R&D";
 const char* password = "beeau$beeau";
 
 WifiManager wm = WifiManager(Blue);
-
-#if NameDevice ==  Outlet3
-
-int valGPIO[numOut];
-
-#endif
 
 
 
@@ -34,17 +29,18 @@ ICACHE_RAM_ATTR void ButtonIsr() {
             if (!but[i].state) {
                 but[i].state = true;
                 but[i].time = _t;
-                valGPIO[i] = valGPIO[i] == 0 ? 1 : 0;
-                digitalWrite(out[i].pin, isState(valGPIO[i], out[i].state));
+                out[i].val = out[i].val == 0 ? 1 : 0;
+                digitalWrite(out[i].pin, isState(out[i].val, out[i].state));
+                out[i].change = true;
                 isStateChange = true;
+                looptime2 = millis();
+                looptime1 = millis();
             }
         }
         else {
             if (but[i].state) {
                 if (millis() - but[i].time > 20) {
                     but[i].state = false;
-                    //Serial.print(i);
-                    //Serial.println(": press");
                 }
                 
             }
@@ -60,7 +56,7 @@ void setup() {
 #if NameDevice ==  Outlet3
 
     for (int i = 0; i < numOut; i++)        // read first
-        valGPIO[i] = preferences.getUInt(("OUT" + (String)i).c_str(), 0);
+        out[i].val = preferences.getUInt(("OUT" + (String)i).c_str(), 0);
 
     for (int i=0;i<numIn;i++)
         pinMode(in[i], INPUT_PULLUP);
@@ -72,7 +68,7 @@ void setup() {
         
     for (int i = 0; i < numOut; i++)
     {
-        digitalWrite(out[i].pin, isState(valGPIO[i] , out[i].state));
+        digitalWrite(out[i].pin, isState(out[i].val, out[i].state));
     }
     for (int i = 0; i < numIn; i++) {
         attachInterrupt(digitalPinToInterrupt(but[i].pin), ButtonIsr, CHANGE);
@@ -85,58 +81,81 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Start");
 #endif
-
+    Reconnect:
     //wm.autoConnect("BeeHome");
-    WiFi.begin("NgocLe", "0972972501");
+    WiFi.begin("Bee R&D", "beeau$beeau");
     while (WiFi.status() != WL_CONNECTED) {
         delay(100);
     }
+
+#ifdef _debug
     Serial.print(wm.getWiFiSSID());
     Serial.print("  ");
     Serial.println(wm.getWiFiPass());
-
+#endif
+    CheckAgan:
     if (WiFi.status() == WL_CONNECTED)
     {
         client->setInsecure();
         macAdd = WiFi.macAddress();
         macAdd.replace(":", "_");
+        _User = wm.getUser();
 #ifdef _debug
         Serial.print(" MAC: ");
-        Serial.println(macAdd);
+        Serial.print(macAdd);
+        Serial.print(" ; User: ");
+        Serial.println(_User);
 #endif
-        https.begin(*client, "https://giacongpcb.vn/beehome/action.php?action=getHour");
-
-        unsigned long ti = millis();
+        
+        https.begin(*client, String(_server) + String(_getHour));
         int httpResponseCode = https.GET();
 
+        if (httpResponseCode < 0) goto Reconnect;
+        else {
+            String payload = https.getString();
+            if (payload.length() < 5) goto Reconnect;
+        }
+
+        https.setURL(String(_server) + String(_getUsers) + macAdd);
+        httpResponseCode = https.GET();
         if (httpResponseCode > 0) {
+            String payload = https.getString();
+            payload = replaceAll(payload, '"');
+            
+            if (payload == "null" || payload != _User || wm.New()) {
+                //new
+                https.setURL(String(_server) + String(_setNew) + macAdd +"&Users=" + _User +
+                    "&Type=" + boardType + "&States=" + boardStates + "&Delays=" + boardDelays);
+                httpResponseCode = https.GET();
+                if (httpResponseCode > 0) {
+                    String payload = https.getString();
+                    if (payload != "Successfully") {
+                        goto CheckAgan;
+                    }
+                }
+                else {
+                    goto CheckAgan;
+                }
+            }
+
+#ifdef _debug
             Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
-            String payload = https.getString();
             Serial.println(payload);
+#endif
         }
         else {
+#ifdef _debug
             Serial.print("Error code: ");
             Serial.println(httpResponseCode);
+#endif
+            delay(1000);
+            goto CheckAgan;
         }
 
-        https.setURL("https://giacongpcb.vn/beehome/action.php?action=getHour1");
-        httpResponseCode = https.GET();
-
-        if (httpResponseCode > 0) {
-            Serial.print("HTTP 2 Response code: ");
-            Serial.println(httpResponseCode);
-            String payload = https.getString();
-            Serial.println(payload);
-        }
-        else {
-            Serial.print("Error 2 code: ");
-            Serial.println(httpResponseCode);
-        }
-        Serial.print(" time: ");
-        Serial.println((millis() - ti));
-        // Free resources
-        https.end();
+    }
+    else {
+        goto Reconnect;
     }
 
 }
@@ -145,32 +164,101 @@ void setup() {
 
 
 void loop() {
-    if (isStateChange) {
-        for (int i = 0; i < numOut; i++)
-            preferences.putUInt(("OUT" + (String)i).c_str(), valGPIO[i]);
-        isStateChange = false;
-    }
+    
 
     if (millis() - looptime1 > looptime_States) {
         unsigned long ti = millis();
         getStates();
+
 #ifdef _debug
-        Serial.print("getStates() time: ");
-        Serial.println(millis() - ti);
+        //Serial.print("getStates() time: ");
+        //Serial.println(millis() - ti);
+#endif
+        getDeslays();
+#ifdef _debug
+        //Serial.print("getDeslays() time: ");
+        //Serial.println(millis() - ti);
 #endif
         looptime1 = millis();
     }
 
-    if (millis() - looptime2 > looptime_Delays) {
-        unsigned long ti = millis();
-        getDeslays();
-#ifdef _debug
-        Serial.print("getDeslays() time: ");
-        Serial.println(millis() - ti);
+    if (millis() - looptime2 > looptime_update)
+        update();
+}
+
+void update() {
+    //update IO
+    for (int i = 0; i < numOut; i++) {
+        if (out[i].change) {
+            preferences.putUInt(("OUT" + (String)i).c_str(), out[i].val);
+            out[i].temp = out[i].val;
+        }
+        else if (out[i].temp != out[i].val) {
+#if NameDevice ==  Outlet3
+            out[i].val = out[i].temp;
+            digitalWrite(out[i].pin, isState(out[i].val, out[i].state));
+            preferences.putUInt(("OUT" + (String)i).c_str(), out[i].val);
 #endif
+            out[i].change = true;
+        }
+        if (out[i].change && out[i].delay != 0) {
+            out[i].delay = 0;
+            out[i].indelay = 0;
+            isStateChange = true;
+        }
+        if (out[i].delay > 0) {
+            if (out[i].indelay == 0) {
+                out[i].indelay = millis();
+            }
+            else if (millis() - out[i].indelay > out[i].delay * 60000) {
+#if NameDevice ==  Outlet3
+                out[i].val = out[i].val == 0 ? 1 : 0;
+                out[i].temp = out[i].val;
+                digitalWrite(out[i].pin, isState(out[i].val, out[i].state));
+                preferences.putUInt(("OUT" + (String)i).c_str(), out[i].val);
+#endif
+                out[i].delay = 0;
+                out[i].indelay = 0;
+                isStateChange = true;
+            }
+        }
+
+        out[i].change = false;
+    }
+    if (isStateChange) {
+        //update to server
+        String sStates = "";
+        String sDelays = "";
+        for (int i = 0; i < numOut; i++) {
+            sStates += String(out[i].val) + ";";
+            sDelays += String(out[i].delay) + ";";
+        }
+
+        int _agan = 0;
+        https.setURL(String(_server) + String(_setControls) + macAdd
+                + "&States=" + sStates + "&Delays=" + sDelays);
+        Agan:
+        int httpGet = https.GET();
+        if (httpGet > 0) {
+            String payload = https.getString();
+            if (payload != "Successfully") {
+                _agan++;
+                if (_agan < 3)
+                    goto Agan;
+            }
+        }
+        isStateChange = false;
+        looptime1 = millis();
         looptime2 = millis();
     }
-
+    else {
+        if (millis() - looptime2 > looptime_Delays) {
+            https.setURL(String(_server) + String(_setRequest) + macAdd);
+            int httpGet = https.GET();
+            looptime2 = millis();
+        }
+        
+    }
 }
 
 void getDeslays() {
@@ -182,22 +270,28 @@ void getDeslays() {
 
 
 #if NameDevice ==  Outlet3
-
+        if (arr[0] == numOut) {
+            for (int i = 1; i <= arr[0]; i++) {
+                if (!out[i - 1].change) {
+                    out[i - 1].delay = arr[i];
+                }
+            }
+        }
 #endif
 
 
 
 #ifdef _debug
-        Serial.print("HTTP Response code: ");
-        Serial.print(httpGet);
-        Serial.print(": ");
-        Serial.println(payload);
+        //Serial.print("HTTP Delays code: ");
+        //Serial.print(httpGet);
+        //Serial.print(": ");
+        //Serial.println(payload);
 #endif
     }
     else {
 
 #ifdef _debug
-        Serial.print("Error code: ");
+        Serial.print("Error getDelays code: ");
         Serial.println(httpGet);
 #endif
     }
@@ -210,15 +304,20 @@ void getStates() {
         String payload = https.getString();
         int* arr = getArrInt(payload, ';');
 
-
 #if NameDevice ==  Outlet3
-
+        if (arr[0] == numOut) {
+            for (int i = 1; i <= arr[0]; i++) {
+                if (!out[i - 1].change) {
+                    out[i - 1].temp = arr[i];
+                }
+            }
+        }
 #endif
 
 
 
 #ifdef _debug
-        Serial.print("HTTP Response code: ");
+        Serial.print("HTTP getStates code: ");
         Serial.print(httpGet);
         Serial.print(": ");
         Serial.println(payload);
@@ -227,27 +326,27 @@ void getStates() {
     else {
 
 #ifdef _debug
-        Serial.print("Error code: ");
+        Serial.print("Error getStates code: ");
         Serial.println(httpGet);
 #endif
     }
 }
 
+// arr[0] is sizeof array
 int* getArrInt(String s, char c) {
+    s = replaceAll(s, '"');
     int n = nCharInStr(s, c);
-    int* arr = new int[n];
+    int* arr = new int[n + 1];
     int _index = s.indexOf(c);
     int i = 0;
     while (_index > -1) {
         String sub = s.substring(0, _index);
-        arr[i] = sub.toInt();
         i++;
+        arr[i] = sub.toInt();
         s = s.substring(_index + 1);
         _index = s.indexOf(c);        
     }
-#ifdef _debug
-    Serial.println();
-#endif
+    arr[0] = i;
     return arr;
 }
 
@@ -258,6 +357,15 @@ int nCharInStr(String s, char c) {
         if (c == s[i])
             result++;
         i++;
+    }
+    return result;
+}
+
+String replaceAll(String s, char c) {
+    String result = "";
+    for (int i = 0; i < s.length(); i++)
+    {
+        if (s[i] != c) result += s[i];
     }
     return result;
 }

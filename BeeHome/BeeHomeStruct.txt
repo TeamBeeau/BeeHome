@@ -1,0 +1,28 @@
+POST
+	InsertBoard (mac)=>Bool
+	InsertOutPut (mac,nameIO[])=>Bool
+	InsertUser(name,userid,pass)=>Bool
+	InsertHome(userid,nameHome)=>Bool
+GET
+	Login(userid,pass)=>Bool
+	EditUser(userid,name,pass,home)=>Bool
+	EditHome(namehome,userid)=>Bool
+
+	GetEvent(mac)=>value[],nameIO[]
+	GetDelay(mac)=>value[],nameIO[]
+	GetState(mac)=>value[],nameIO[]
+	GetOnline(mac)=>date
+	GetBoard(mac) =>name,type[]
+	GetNewBoard()=>macAdd
+	
+	UpdateBoard(mac,name,user,home)=>Bool
+	UpdateOnline(mac,date)=>Bool
+	UpdateState(mac,nameIO[],value[])=>Bool
+	UpdateDelay(mac,nameIO[],valueDelay[])=>Bool
+	UpdateEnvent(mac,nameIO[],valueEvent[])=>Bool
+
+	DeleteBoard(mac)=>Bool
+	DeleteHome(nameHome)=>Bool
+	DeleteOuput(mac)=>Bool
+
+	

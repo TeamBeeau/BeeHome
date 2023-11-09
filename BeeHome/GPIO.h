@@ -20,11 +20,18 @@ struct  button
 struct output 
 {
 	int pin;
+	int val;
+	int temp;
+	unsigned long delay;
+	unsigned long indelay;
+	bool change;
 	bool state;
 };
 
 
 #if NameDevice ==  Outlet3	
+	#define numIn  3
+	#define numOut  3
 
 	#define GPIO1 14
 	#define GPIO2 12
@@ -38,11 +45,10 @@ struct output
 	button but1 = { btn1, 0, false ,false };
 	button but2 = { btn2, 0, false ,false };
 	button but3 = { btn3, 0, false ,false };
-	output out1 = { GPIO1, true };
-	output out2 = { GPIO2, true };
-	output out3 = { GPIO3, true };
-	#define numIn  3
-	#define numOut  3
+	output out1 = { GPIO1, 0, 0, 0, 0, false, true };
+	output out2 = { GPIO2, 0, 0, 0, 0, false, true };
+	output out3 = { GPIO3, 0, 0, 0, 0, false, true };
+	
 
 	int in[] = { btn1 ,btn2, btn3, btn4 };
 	button but[numIn] = { but1, but2, but3 };

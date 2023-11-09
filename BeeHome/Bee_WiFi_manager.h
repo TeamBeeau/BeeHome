@@ -28,6 +28,8 @@ public:
 	String getWiFiPass();
 	String getWiFiSSID();
 	String getUser();
+	bool New();
+	void set_Reset();
 	//IPAddress getWiFiIP();
 private:
 	unsigned long _time_out;
