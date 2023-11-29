@@ -73,6 +73,7 @@ void handleWebRequests() {
         _httpServer.uri().substring(0, 6) == "/user=") {
         String data_ = _httpServer.uri().substring(6);
         int index_ = data_.indexOf(";");
+        _WiFin.begin("_myWifin", false);
         _WiFin.putString("User", data_.substring(0, index_));
         handleRoot();
         return;
@@ -180,14 +181,16 @@ WifiManager::WifiManager(int led_blink, bool inv) {
     led_stt = led_blink;
     pinMode(led_stt, OUTPUT);
     _inv = inv;
-    _WiFin.begin("_myWifin", false);
+    
     _time_out = 100000;
     _localIP = IPAddress(192, 168, 4, 1);
 }
 
 void WifiManager::resetSettings() {
+    _WiFin.begin("_myWifin", false);
     _WiFin.putString("WifiPass", "");
     _WiFin.putString("WifiSSID", "");
+    _WiFin.end();
 }
 
 void WifiManager::setConnectTimeout(unsigned long time_out) {
@@ -203,24 +206,38 @@ bool WifiManager::setHostname(String hostname) {
 }
 
 String WifiManager::getWiFiPass() {
-    return _WiFin.getString("WifiPass", "");
+    _WiFin.begin("_myWifin", false);
+    String rs = _WiFin.getString("WifiPass", "");
+    _WiFin.end();
+    return rs;
 }
 
 String WifiManager::getWiFiSSID() {
-    return _WiFin.getString("WifiSSID", "");
+    _WiFin.begin("_myWifin", false);
+    String rs = _WiFin.getString("WifiSSID", "");
+    _WiFin.end();
+    return rs;
 }
 
 String WifiManager::getUser() {
-    return _WiFin.getString("User", "");
+    _WiFin.begin("_myWifin", false);
+    String rs = _WiFin.getString("User", "");
+    _WiFin.end();
+    return rs;
 }
 
 
 bool WifiManager::New() {
-    return _WiFin.getBool("New", false);
+    _WiFin.begin("_myWifin", false);
+    bool rs = _WiFin.getBool("New", false);
+    _WiFin.end();
+    return rs;
 }
 
 void WifiManager::set_Reset() {
+    _WiFin.begin("_myWifin", false);
     _WiFin.putBool("Reset", true);
+    _WiFin.end();
 }
 
 /*
@@ -250,6 +267,7 @@ A:
 #if Debug == 1
     Serial.print("Wifi connecting... ");
 #endif
+    _WiFin.begin("_myWifin", false);
     String _ssid = _WiFin.getString("WifiSSID", "");
     String _pass = _WiFin.getString("WifiPass", "");
     if (_ssid.length() > 0) {
@@ -287,6 +305,7 @@ A:
 #endif
             digitalWrite(led_stt, LOW);
             delay(100);
+            _WiFin.end();
             return true;
         }
 
