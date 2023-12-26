@@ -263,18 +263,28 @@ IPAddress WifiManager::getWiFiIP() {
 
 
 bool WifiManager::autoConnect(char const* apName, char const* apPassword) {
+    _apname = String(apName);
+    _apPasss = String(apPassword);
 A:
 #if Debug == 1
     Serial.print("Wifi connecting... ");
 #endif
     _WiFin.begin("_myWifin", false);
-    String _ssid = _WiFin.getString("WifiSSID", "");
+    if (_WiFin.getBool("Reset", false)) {
+        _WiFin.putBool("Reset", false);
+        delay(100);
+        _WiFin.end();
+        delay(100);
+        setnew();
+    }
+    String _ssid = _WiFin.getString("WifiSSID");
     String _pass = _WiFin.getString("WifiPass", "");
     if (_ssid.length() > 0) {
         _ssid += "\0";
         _pass += "\0";
         if (WiFi.status() != WL_CONNECTED) {
-            //WiFi.disconnect();
+            WiFi.disconnect();
+            delay(1000);
             WiFi.mode(WIFI_STA);
 #if Debug == 1
             Serial.print("Connect to: ");
@@ -284,8 +294,6 @@ A:
 
 #endif
             
-            String ss = "Bee R&D";
-            String ps = "beeau$beeau";
             WiFi.begin(_ssid, _pass);
 
             while (WiFi.status() != WL_CONNECTED) {
@@ -296,8 +304,10 @@ A:
                 //toge = !toge;
                 //digitalWrite(led_stt, toge);
                 digitalWrite(led_stt, HIGH );
-                if (millis() - t2 > 55000) {
-                    goto B;
+                if (millis() - t2 > 60000) {
+                    _WiFin.end();
+                    delay(1000);
+                    goto A;
                 }
             }
 #if Debug == 1
@@ -310,8 +320,13 @@ A:
         }
 
     }
-    B:
-    //_WiFi.begin("_wifi", false);
+
+    setnew();
+    return false;
+}
+
+void WifiManager::setnew() {
+    _WiFin.begin("_myWifin", false);
     int n;
     t2 = millis();
     digitalWrite(led_stt, 1);
@@ -320,8 +335,8 @@ A:
 #if Debug == 1
     Serial.println(apName);
 #endif
-    WiFi.softAP(apName, apPassword);
-    
+    WiFi.softAP(_apname, _apPasss);
+
     IPAddress setup_Subnet(255, 255, 255, 0);
     IPAddress setup_Gateway(192, 168, 1, 0);
     LittleFS.begin();

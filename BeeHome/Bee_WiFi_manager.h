@@ -17,6 +17,8 @@ install libs
  <Preferences.h>
 */
 
+
+
 class WifiManager {
 public:
 	WifiManager(int led_blink = -1, bool inv = false);
@@ -30,8 +32,11 @@ public:
 	String getUser();
 	bool New();
 	void set_Reset();
+	void setnew();
 	//IPAddress getWiFiIP();
 private:
+	String _apname;
+	String _apPasss;
 	unsigned long _time_out;
 	IPAddress _localIP;
 	unsigned long t2, t1, t, t3, t_s, t_ss;
