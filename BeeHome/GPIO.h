@@ -157,7 +157,8 @@ struct output
 	bool firston = false;
 	bool changedelay = false;
 	bool enBuz = false;
-	
+	int delay_fiston = 10;
+	int delay_changeState = 0;
 #else
 
 #error "Define Device Name!"

@@ -1,21 +1,21 @@
 #include "Var.h"
 #include "GPIO.h"
-#include "Bee_WiFi_manager.h"
 #include <string.h>
 #include <Ticker.h>
+#include <WiFiManager.h>
 
 #define _debug
 
-const unsigned long looptime_States = 100;
+const unsigned long looptime_States = 60;
 const unsigned long looptime_Delays = 2000;
 const unsigned long looptime_Events = 5000;
-const unsigned long looptime_update = 500;
+const unsigned long looptime_update = 100;
 const unsigned long looptime_checkEvent = 10000;
 
 const char* ssid = "Bee R&D";
 const char* password = "beeau$beeau";
 
-WifiManager wm = WifiManager(Blue);
+//WifiManager wm = WifiManager(Blue);
 
 void checkInput() {
     for (int i = 0; i < numIn; i++) {
@@ -33,8 +33,8 @@ void checkInput() {
 #endif
                 out[i].change = true;
                 isStateChange = true;
-                looptime2 = millis();
-                //looptime1 = millis();
+                //looptime2 = millis();
+                looptime1 = millis();
                 looptime3 = millis();
                 looptime4 = millis();
             }
@@ -100,16 +100,21 @@ void syncSpeed() {
     }
     else {
         if (out[2].val &&
-            (outsped[0].indelay > 0 || outsped[1].indelay > 0 || outsped[2].indelay > 0))
+            (outsped[0].indelay > delay_changeState || outsped[1].indelay > delay_changeState || outsped[2].indelay > delay_changeState))
                 digitalWrite(out[2].pin, isState(true, out[2].state));
     }
     if (out[0].val) {
-        if (Power_indelay <= 6) {
+        if (Power_indelay <= delay_fiston) {
             firston = true;
-            if (Power_indelay < 5)
-                digitalWrite(outsped[1].pin, isState(true, outsped[1].state));
-            else if (out[1].val != 2) 
+            if (Power_indelay < (delay_fiston - 1)) {
+                if (out[1].val < 3)
+                    digitalWrite(outsped[1].pin, isState(true, outsped[1].state));
+                else digitalWrite(outsped[2].pin, isState(true, outsped[2].state));
+            }
+            else if (out[1].val != 2 || out[1].val != 3) {
                 digitalWrite(outsped[1].pin, isState(false, outsped[1].state));
+                digitalWrite(outsped[2].pin, isState(false, outsped[2].state));
+            }
             Power_indelay++;
             if (out[1].val == 0) {
                 out[1].val = 1;
@@ -130,8 +135,8 @@ void syncSpeed() {
         firston = false;
     }
     for (int i = 0; i < 3; i++) {
-        if (out[1].val == outsped[i].stt && out[0].val == 1 && Power_indelay > 6) {
-            if (outsped[i].indelay > 0) {
+        if (out[1].val == outsped[i].stt && out[0].val == 1 && Power_indelay > delay_fiston) {
+            if (outsped[i].indelay > delay_changeState) {
                 digitalWrite(outsped[i].pin, isState(true, outsped[i].state));
             }
             else outsped[i].indelay++;
@@ -337,7 +342,7 @@ void loop2() {
     if (but_press[0] >= 50 && but_press[1] >= 50)
 #endif
     {
-        wm.set_Reset();
+        //wm.set_Reset();
         delay(500);
         ESP.restart();
     }
@@ -424,18 +429,30 @@ void setup() {
     
     
 }
-
+WiFiManager wifiManager;
 void connect() {
 Reconnect:
     WiFi.disconnect();
     delay(2000);
-    wm.autoConnect("BeeHome");
+
+    preferences.begin("myfile", false);
+    _User = preferences.getString("User", "");
+    wifiManager.SetUser(_User);
+    preferences.end();
+    wifiManager.setLed(Blue);
+    wifiManager.setConnectTimeout(200);
+    wifiManager.autoConnect("BeeHome");
+    //wm.autoConnect("BeeHome");
     //WiFi.begin("Bee R&D", "beeau$beeau");
     //WiFi.begin("Team 2", "Te@m2023");
     //WiFi.begin("Ngoc", "0972972501");
+    ulong rcn = 0;
     while (WiFi.status() != WL_CONNECTED) {
         delay(100);
+        rcn++;
+        if (rcn > 1000) goto Reconnect;
     }
+    digitalWrite(Blue, LOW);
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
 #ifdef _debug
     //Serial.print(wm.getWiFiSSID());
@@ -450,16 +467,23 @@ CheckAgan:
         if (macAddBoard.length() < 2) macAddBoard = WiFi.macAddress();
         
         macAddBoard.replace(":", "_");
-        _User = wm.getUser();
+        //_User = wm.getUser();
         //_User = "test";
+        _User = wifiManager.User;
+        preferences.begin("myfile", false);
+        preferences.putString("User", _User);
+        preferences.end();
 #ifdef _debug
         Serial.print(" MAC: ");
         Serial.print(macAddBoard);
         Serial.print(" ; User: ");
         Serial.println(_User);
 #endif
-        WiFiClient client;
-        HTTPClient https;
+        client.setTimeout(500);
+        https.setReuse(false);
+        https.setTimeout(500);
+        //WiFiClient client;
+        //HTTPClient https;
         https.begin(client, String(_server) + String(_getHour));
         int httpResponseCode = -1;
         try {
@@ -535,12 +559,7 @@ CheckAgan:
 
 
 void loop() {
-    //if (irrecv.decode(&results)) {
-    //    // print() & println() can't handle printing long longs. (uint64_t)
-    //    serialPrintUint64(results.value, HEX);
-    //    Serial.println("");
-    //    irrecv.resume();  // Receive the next value
-    //}
+
     if (millis() - looptime1 > looptime_States) {
         unsigned long ti = millis();
         try {
@@ -556,12 +575,14 @@ void loop() {
         //Serial.println(millis() - ti);
 #endif
         //delay(50);
-
+        getEventE = true;
         looptime1 = millis();
     }
     if (millis() - looptime3 > looptime_Delays) {
         try{
+            if (getEventE) delay(20);
             getDeslays();
+            getDelayE = true;
         }
         catch (...) {
 #ifdef _debug
@@ -577,7 +598,9 @@ void loop() {
 
     if (millis() - looptime4 > looptime_Events) {
         try {
+            if (getEventE || getDelayE) delay(20);
             getEvents();
+            getEventE = true;
         }
         catch (...) {
 #ifdef _debug
@@ -591,10 +614,16 @@ void loop() {
         looptime4 = millis();
     }
 
-    check_event();
+    if (millis() - looptime5 > looptime_checkEvent) {
+        if (getEventE || getDelayE || getEventE) delay(20);
+        check_event();
+        getEventCE = true;
+        looptime5 = millis();
+    }
 
     if (millis() - looptime2 > looptime_update) {
         try {
+            if (getEventE || getDelayE || getEventE || getEventCE) delay(20);
             update();
         }
         catch (...) {
@@ -605,11 +634,15 @@ void loop() {
         looptime2 = millis();
         
     }
-    delay(0);
+    delay(10);
+    getStateE = false;
+    getDelayE = false;
+    getEventE = false;
+    getEventCE = false;
 }
 
 void check_event() {
-    if (millis() - looptime5 > looptime_checkEvent) {
+    
         String payload;
         String ds[3];
         int d[3];
@@ -699,8 +732,7 @@ void check_event() {
             }
             isEventChange = false;
         }
-        looptime5 = millis();
-    }
+        
 }
 
 void getEvents() {
@@ -820,6 +852,7 @@ void update() {
             else if (i == 2) {
                 preferences.putBool("Rotate", out[2].val == 0 ? false : true);
             }
+            enBuz = true;
 #endif
             preferences.end();
             out[i].change = true;
@@ -957,7 +990,7 @@ void getStates() {
 //#endif
         delete arr;
 
-
+        
 #ifdef _debug
         //Serial.print("HTTP getStates code: ");
         //Serial.print(httpGet);
@@ -1010,8 +1043,7 @@ String replaceAll(String s, char c) {
     return result;
 }
 
-WiFiClient client;
-HTTPClient https;
+
 
 String getRequest(String Url) {
     int ag = 0;
@@ -1020,9 +1052,7 @@ String getRequest(String Url) {
         //ESP.setDramHeap();
         //delay(50);
         
-        client.setTimeout(1000);
-        https.setReuse(false);
-        https.setTimeout(1000);
+        
         //https.setRedirectLimit(1);
         https.begin(client, Url.c_str());
         int httpGet = -1;
@@ -1048,14 +1078,17 @@ String getRequest(String Url) {
 #endif
             if (ag < 3) {
                 ag++;
-                delay(200);
+                delay(100);
                 goto Getagain;
             }
             else httpErrCount++;
         }
         try {
-            https.DELETE();
-            https.end();
+            
+            if (getEventE) {
+                https.end();
+                https.DELETE();
+            }
         }
         catch (...) {
 #ifdef _debug

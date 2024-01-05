@@ -13,7 +13,7 @@
 
 #ifndef WiFiManager_h
 #define WiFiManager_h
-
+#define ESP8266 1
 #if defined(ESP8266) || defined(ESP32)
 
 #ifdef ESP8266
@@ -242,7 +242,10 @@ class WiFiManager
     WiFiManager();
     ~WiFiManager();
     void WiFiManagerInit();
-
+    void SetUser(String u);
+    String User;
+    int Led;
+    void setLed(int i);
     // auto connect to saved wifi, or custom, and start config portal on failures
     boolean       autoConnect();
     boolean       autoConnect(char const *apName, char const *apPassword = NULL);
@@ -503,7 +506,7 @@ class WiFiManager
     std::vector<uint8_t> _menuIds;
     std::vector<const char *> _menuIdsParams  = {"wifi","param","info","exit"};
     std::vector<const char *> _menuIdsUpdate  = {"wifi","param","info","update","exit"};
-    std::vector<const char *> _menuIdsDefault = {"wifi","info","exit","sep","update"};
+    std::vector<const char *> _menuIdsDefault = { "wifi","info" };//{"wifi","info","exit","sep","update"};
 
     // ip configs @todo struct ?
     IPAddress     _ap_static_ip;
@@ -649,6 +652,7 @@ class WiFiManager
     void          HTTPSend(const String &content);
     void          handleRoot();
     void          handleWifi(boolean scan);
+    void          handleUser();
     void          handleWifiSave();
     void          handleInfo();
     void          handleReset();
@@ -778,7 +782,8 @@ class WiFiManager
     
     // Set default debug level
     #ifndef WM_DEBUG_LEVEL
-    #define WM_DEBUG_LEVEL DEBUG_NOTIFY
+    //#define WM_DEBUG_LEVEL DEBUG_NOTIFY
+    #define WM_DEBUG_LEVEL DEBUG_SILENT
     #endif
 
     // override debug level OFF
@@ -829,6 +834,8 @@ class WiFiManager
       // DEBUG_WM("NO fromString METHOD ON IPAddress, you need ESP8266 core 2.1.0 or newer for Custom IP configuration to work.");
       return false;
     }
+    ulong t2;
+    bool toge;
 
 };
 

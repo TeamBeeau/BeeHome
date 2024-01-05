@@ -1,4 +1,4 @@
-﻿/**
+/**
  * wm_strings_en.h
  * engligh strings for
  * WiFiManager, a library for the ESP8266/Arduino platform
@@ -66,13 +66,13 @@ const char HTTP_FORM_START[]       PROGMEM = "<form method='POST' action='{v}'>"
 const char HTTP_FORM_WIFI[]        PROGMEM = "<label for='s'>SSID</label><input id='s' name='s' maxlength='32' autocorrect='off' autocapitalize='none' placeholder='{v}'><br/><label for='p'>Password</label><input id='p' name='p' maxlength='64' type='password' placeholder='{p}'><input type='checkbox' onclick='f()'> Show Password";
 const char HTTP_FORM_WIFI_END[]    PROGMEM = "";
 const char HTTP_FORM_STATIC_HEAD[] PROGMEM = "<hr><br/>";
-const char HTTP_FORM_END[]         PROGMEM = "<br/><br/><button type='submit'>Kết nối Wifi</button></form>";
+const char HTTP_FORM_END[]         PROGMEM = "<br/><br/><button type='submit'>Save</button></form>";
 const char HTTP_FORM_LABEL[]       PROGMEM = "<label for='{i}'>{t}</label>";
 const char HTTP_FORM_PARAM_HEAD[]  PROGMEM = "<hr><br/>";
 const char HTTP_FORM_PARAM[]       PROGMEM = "<br/><input id='{i}' name='{n}' maxlength='{l}' value='{v}' {c}>\n"; // do not remove newline!
 
 const char HTTP_SCAN_LINK[]        PROGMEM = "<br/><form action='/wifi?refresh=1' method='POST'><button name='refresh' value='1'>Refresh</button></form>";
-const char HTTP_SAVED[]            PROGMEM = "<div class='msg'>Đã lưu Wifi<br/>Vui lòng chờ Thiết bị kết nối trong giây lát.<br />Nếu kết nối wifi thất bại hãy thử lại</div>";
+const char HTTP_SAVED[]            PROGMEM = "<div class='msg'>Saving Credentials<br/>Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
 const char HTTP_PARAMSAVED[]       PROGMEM = "<div class='msg S'>Saved<br/></div>";
 const char HTTP_END[]              PROGMEM = "</div></body></html>";
 const char HTTP_ERASEBTN[]         PROGMEM = "<br/><form action='/erase' method='get'><button class='D'>Erase WiFi config</button></form>";
@@ -192,6 +192,8 @@ const char HTTP_JS[] PROGMEM =
 	const char HTTP_INFO_flashsize[]  PROGMEM = "<dt>Real flash size</dt><dd>{1} bytes</dd>";
 #endif
 
+	const char HTTP_INFO_bee[]   PROGMEM = "<h3>BeeHome</h3><hr><dl>";
+	const char HTTP_INFO_beever[]     PROGMEM = "<dt>Version</dt><dd>{1}</dd>";
 const char HTTP_INFO_memsmeter[]  PROGMEM = "<br/><progress value='{1}' max='{2}'></progress></dd>";
 const char HTTP_INFO_memsketch[]  PROGMEM = "<dt>Memory - Sketch size</dt><dd>Used / Total bytes<br/>{1} / {2}";
 const char HTTP_INFO_freeheap[]   PROGMEM = "<dt>Memory - Free heap</dt><dd>{1} bytes available</dd>";
@@ -220,7 +222,8 @@ const char HTTP_INFO_aboutarduino[] PROGMEM = "<dt>Arduino</dt><dd>{1}</dd>";
 const char HTTP_INFO_aboutsdk[]     PROGMEM = "<dt>ESP-SDK/IDF</dt><dd>{1}</dd>";
 const char HTTP_INFO_aboutdate[]    PROGMEM = "<dt>Build date</dt><dd>{1}</dd>";
 
-const char S_brand[]              PROGMEM = "WiFiManager";
+//const char S_brand[]              PROGMEM = "WiFiManager";
+const char S_brand[]              PROGMEM = "BeeHome";
 const char S_debugPrefix[]        PROGMEM = "*wm:";
 const char S_y[]                  PROGMEM = "Yes";
 const char S_n[]                  PROGMEM = "No";
@@ -232,8 +235,10 @@ const char S_NA[]                 PROGMEM = "Unknown";
 const char S_passph[]             PROGMEM = "********";
 const char S_titlewifisaved[]     PROGMEM = "Credentials saved";
 const char S_titlewifisettings[]  PROGMEM = "Settings saved";
-const char S_titlewifi[]          PROGMEM = "Config ESP";
-const char S_titleinfo[]          PROGMEM = "Info";
+//const char S_titlewifi[]          PROGMEM = "Config ESP";
+const char S_titlewifi[]          PROGMEM = "Config Wifi";
+//const char S_titleinfo[]          PROGMEM = "Info";
+const char S_titleinfo[]          PROGMEM = "BeeHome Info";
 const char S_titleparam[]         PROGMEM = "Setup";
 const char S_titleparamsaved[]    PROGMEM = "Setup saved";
 const char S_titleexit[]          PROGMEM = "Exit";

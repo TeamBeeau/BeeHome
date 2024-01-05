@@ -45,13 +45,5 @@
     <ClInclude Include="GPIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Bee_WiFi_manager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Bee_WiFi_manager.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

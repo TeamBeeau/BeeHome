@@ -45,7 +45,7 @@ const char* serverName2 = "https://giacongpcb.vn/esp-outputs-action.php?action=o
 	const char* defautNames = "Power;Speed;Rotate;";
 
 #endif
-
+#define Beeversion	"3.1"
 
 const long interval = 80;
 unsigned long previousMillis = 0;
@@ -53,6 +53,8 @@ unsigned long previousMillis = 0;
 
 //WiFiClient client;
 //HTTPClient https;
+WiFiClient client;
+HTTPClient https;
 
 String macAddBoard;
 String _User;
@@ -65,7 +67,10 @@ unsigned long looptime3 = 0;
 unsigned long looptime4 = 0;
 unsigned long looptime5 = 0;
 int httpErrCount = 0;
-
+bool getStateE = false;
+bool getDelayE = false;
+bool getEventE = false;
+bool getEventCE = false;
 
 
 
